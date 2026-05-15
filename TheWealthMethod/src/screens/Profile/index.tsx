@@ -31,7 +31,8 @@ export const ProfileScreen: React.FC<
 > = ({ navigation }) => {
   const { logout } = useAuthActions();
   const { theme, themeMode, setThemeMode, isDark } = useAppTheme();
-  const { name, email, avatar, currency, currencySymbol, updateProfile, fetchProfile } = useUserStore();
+  const { firstName, lastName, name, email, avatar, currency, currencySymbol, updateProfile, fetchProfile } = useUserStore();
+  const displayName = [firstName, lastName].filter(Boolean).join(" ") || name || "Member";
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -312,7 +313,7 @@ export const ProfileScreen: React.FC<
             <Pencil size={14} color={theme.colors.onPrimary} />
           </Pressable>
         </View>
-        <Text style={dynamicStyles.userName}>{name}</Text>
+        <Text style={dynamicStyles.userName}>{displayName}</Text>
         <Text style={dynamicStyles.userEmail}>{email}</Text>
         <View style={dynamicStyles.badgeRow}>
           <View style={dynamicStyles.badgeGreen}>

@@ -17,6 +17,8 @@ const loginMapping = (params) => ({
   accessToken: params.jwt,
   isTempPass: params.tempPassCond ? params.tempPassCond : false,
   profile: {
+    firstname: params.user.firstname,
+    lastname: params.user.lastname,
     name: `${params.user.firstname} ${params.user.lastname}`,
     email: params.user.email,
     phone: params.user.phone,
@@ -26,6 +28,7 @@ const loginMapping = (params) => ({
     preferredCurrency: params.user.preferredCurrency,
     privacyMode: params.user.privacyMode,
     biometricEnabled: params.user.biometricEnabled,
+    requiresPasswordChange: params.tempPassCond ? params.tempPassCond : false,
   },
 });
 
@@ -175,6 +178,7 @@ const getProfile = (userId) => {
     if (!user) throw cusExc.completeCustomException("usr_nt_exst");
     const sanitized = appUtils.sanitizeUser(user);
     delete sanitized.salt; delete sanitized.hash;
+    sanitized.requiresPasswordChange = !!user.tempPass;
     return sanitized;
   });
 };
@@ -184,6 +188,7 @@ const updateProfile = (userId, updateData) => {
     if (!user) throw cusExc.completeCustomException("usr_nt_exst");
     const sanitized = appUtils.sanitizeUser(user);
     delete sanitized.salt; delete sanitized.hash;
+    sanitized.requiresPasswordChange = !!user.tempPass;
     return sanitized;
   }).then(sanitized => ({ ...successMsg.user_update, profile: sanitized }));
 };

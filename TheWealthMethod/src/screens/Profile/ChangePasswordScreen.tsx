@@ -17,6 +17,7 @@ import { ScreenWrapper } from "../../components/layout/ScreenWrapper";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuthActions } from "../../features/auth/useAuthActions";
+import { useAuthStore } from "../../store/authStore";
 import { useUserStore } from "../../store/userStore";
 
 type Props = CompositeScreenProps<
@@ -36,13 +37,27 @@ export const ChangePasswordScreen: React.FC<Props> = ({ navigation, route }) => 
   const [showCurrent, setShowCurrent] = useState(false);
   const { changePassword, loading } = useAuthActions();
   const { fetchProfile } = useUserStore();
+  const { temporaryPassword, setTempPassState } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
+
+  React.useEffect(() => {
+    if (isForced && temporaryPassword && !currentPass) {
+      setCurrentPass(temporaryPassword);
+    }
+  }, [isForced, temporaryPassword, currentPass]);
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await fetchProfile();
+    const profile = await fetchProfile();
+    if (profile?.requiresPasswordChange === false) {
+      setTempPassState(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "MainTabs" }],
+      });
+    }
     setRefreshing(false);
-  }, [fetchProfile]);
+  }, [fetchProfile, navigation, setTempPassState]);
 
   // Configure header options dynamically
   useLayoutEffect(() => {
@@ -164,6 +179,10 @@ export const ChangePasswordScreen: React.FC<Props> = ({ navigation, route }) => 
     
     const success = await changePassword(currentPass, newPass);
     if (success) {
+      const profile = await fetchProfile();
+      if (profile?.requiresPasswordChange === false) {
+        setTempPassState(false);
+      }
       if (isForced) {
         // If it was a forced change, go to dashboard (MainTabs)
         navigation.reset({

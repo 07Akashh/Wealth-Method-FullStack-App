@@ -1,7 +1,6 @@
-import apiClient from "../lib/apiClient";
-import { UserRole } from "../constants/roles";
-import { Platform } from "react-native";
 import * as Device from "expo-device";
+import { Platform } from "react-native";
+import apiClient from "../lib/apiClient";
 
 const getDeviceName = () => {
    let name = Platform.OS === 'ios' ? 'iPhone/iPad' : Platform.OS === 'android' ? 'Android Device' : 'Unknown Device';
@@ -34,6 +33,8 @@ export type AuthResponse = {
   accessToken: string;
   profile: {
     Id: string;
+    firstname?: string;
+    lastname?: string;
     email: string;
     name: string;
     role: string;
@@ -42,6 +43,7 @@ export type AuthResponse = {
     preferredCurrency?: string;
     privacyMode?: boolean;
     biometricEnabled?: boolean;
+    requiresPasswordChange?: boolean;
   };
   isTempPass?: boolean;
 };

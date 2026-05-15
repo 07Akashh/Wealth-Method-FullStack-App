@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider, focusManager, onlineManager, QueryCache, MutationCache } from "@tanstack/react-query";
-import React, { useEffect, useRef } from "react";
-import { AppState, Platform, AppStateStatus } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import { QueryClientProvider, focusManager, onlineManager } from "@tanstack/react-query";
+import React, { useEffect } from "react";
+import { AppState, AppStateStatus, Platform } from "react-native";
 import toastHandler from "../../Functions/Toasthandler";
+import { queryClient } from "./queryClient";
 
 const toast = toastHandler();
 
@@ -39,41 +40,8 @@ const QueryProvider: React.FC<QueryProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const queryClientRef = useRef(
-    new QueryClient({
-      queryCache: new QueryCache({
-        onError: (error: any, query) => {
-          if (query.meta?.errorMessage) {
-            toast("dan", query.meta.errorMessage as string);
-          } else if (error.message && !error.message.includes("canceled")) {
-             console.warn(`[Query Error]: ${error.message}`);
-          }
-        },
-      }),
-      mutationCache: new MutationCache({
-        onError: (error: any) => {
-          const message = error.message || "Action could not be completed.";
-          toast("dan", message);
-        },
-        onSuccess: (data: any, variables, context, mutation) => {
-          if (mutation.meta?.successMessage) {
-            toast("sus", mutation.meta.successMessage as string);
-          }
-        }
-      }),
-      defaultOptions: {
-        queries: {
-          retry: 1, 
-          refetchOnWindowFocus: true, 
-          refetchOnReconnect: true,
-          staleTime: 30000, 
-        },
-      },
-    })
-  );
-
   return (
-    <QueryClientProvider client={queryClientRef.current}>
+    <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   );

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { authService } from '../services/authService';
 
 export const CURRENCIES = [
@@ -13,6 +13,8 @@ export const CURRENCIES = [
 ];
 
 interface UserState {
+  firstName: string;
+  lastName: string;
   name: string;
   email: string;
   phone: string;
@@ -33,15 +35,17 @@ interface UserState {
   setHasHydrated: (hydrated: boolean) => void;
   convertAmount: (amountInINR: number) => number;
   fetchExchangeRates: () => Promise<void>;
-  fetchProfile: () => Promise<void>;
+  fetchProfile: () => Promise<any | null>;
 }
 
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
-      name: 'Rahul',
-      email: 'rahul@example.com',
-      phone: '+1 234 567 890',
+      firstName: '',
+      lastName: '',
+      name: '',
+      email: '',
+      phone: '',
       avatar: null,
       currency: 'INR',
       currencySymbol: '₹',
@@ -59,6 +63,16 @@ export const useUserStore = create<UserState>()(
         // Optimistically update local state
         set((state) => {
           const newState = { ...state, ...data };
+          if (data.firstName !== undefined || data.lastName !== undefined) {
+            const nextFirstName = data.firstName ?? state.firstName;
+            const nextLastName = data.lastName ?? state.lastName;
+            newState.firstName = nextFirstName;
+            newState.lastName = nextLastName;
+            newState.name = [nextFirstName, nextLastName].filter(Boolean).join(" ");
+          }
+          if (data.name !== undefined && data.firstName === undefined && data.lastName === undefined) {
+            newState.name = data.name;
+          }
           if (data.currency) {
             const found = CURRENCIES.find(c => c.code === data.currency);
             if (found) newState.currencySymbol = found.symbol;
@@ -74,6 +88,13 @@ export const useUserStore = create<UserState>()(
         try {
           // Map local state keys to backend keys where necessary
           const backendData: any = { ...data };
+          if (data.name !== undefined && data.firstName === undefined && data.lastName === undefined) {
+            const [firstName = "", ...rest] = String(data.name).trim().split(/\s+/);
+            backendData.firstname = firstName;
+            backendData.lastname = rest.join(" ");
+          }
+          if (data.firstName !== undefined) backendData.firstname = data.firstName;
+          if (data.lastName !== undefined) backendData.lastname = data.lastName;
           if (data.avatar !== undefined) backendData.img = data.avatar;
           if (data.currency !== undefined) backendData.preferredCurrency = data.currency;
           if (data.biometricsEnabled !== undefined) backendData.biometricEnabled = data.biometricsEnabled;
@@ -115,9 +136,13 @@ export const useUserStore = create<UserState>()(
         try {
           const profileData = await authService.getProfile();
           if (profileData) {
+            const firstName = profileData.firstname ?? "";
+            const lastName = profileData.lastname ?? "";
             set((state) => ({
               ...state,
-              name: profileData.name || state.name,
+              firstName,
+              lastName,
+              name: profileData.name || [firstName, lastName].filter(Boolean).join(" ") || state.name,
               email: profileData.email || state.email,
               phone: profileData.phone || state.phone,
               avatar: profileData.img || state.avatar,
@@ -131,10 +156,13 @@ export const useUserStore = create<UserState>()(
                if (found) set({ currencySymbol: found.symbol });
                await get().fetchExchangeRates();
             }
+            return profileData;
           }
         } catch (error) {
           console.error("Failed to fetch profile:", error);
         }
+
+        return null;
       },
     }),
     {

@@ -11,10 +11,10 @@ import {
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Haptics from "expo-haptics";
 import { Lock, Fingerprint, ShieldCheck, Delete } from "lucide-react-native";
-import Animated, { 
-  useAnimatedStyle, 
-  withSequence, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
   useSharedValue,
   FadeIn
 } from "react-native-reanimated";
@@ -28,12 +28,13 @@ const PIN_LENGTH = 6;
 
 export const AuthLockScreen: React.FC = () => {
   const { theme } = useAppTheme();
-  const { setAppLocked, name, pin: storedPin, biometricsEnabled } = useUserStore();
-  
+  const { setAppLocked, firstName, lastName, name, pin: storedPin, biometricsEnabled } = useUserStore();
+  const displayName = [firstName, lastName].filter(Boolean).join(" ") || name;
+
   const [pinEntry, setPinEntry] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const shakeOffset = useSharedValue(0);
 
   const handleShake = useCallback(() => {
@@ -95,7 +96,7 @@ export const AuthLockScreen: React.FC = () => {
       const nextPin = pinEntry + num;
       setPinEntry(nextPin);
       setError(null);
-      
+
       if (nextPin.length === PIN_LENGTH) {
         if (nextPin === storedPin) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -133,15 +134,15 @@ export const AuthLockScreen: React.FC = () => {
     <ScreenWrapper hideHeader>
       <Animated.View entering={FadeIn.duration(800)} style={styles.container}>
         <View style={styles.header}>
-             <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + "15" }]}>
-                <ShieldCheck size={40} color={theme.colors.primary} />
-             </View>
-             <Text style={[styles.title, { color: theme.colors.onSurface, fontFamily: theme.typography.fontFamily.displayBold }]}>
-               {name}
-             </Text>
-             <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant, fontFamily: theme.typography.fontFamily.bodyRegular }]}>
-               Enter your security PIN or authenticate to unlock
-             </Text>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + "15" }]}>
+            <ShieldCheck size={40} color={theme.colors.primary} />
+          </View>
+          <Text style={[styles.title, { color: theme.colors.onSurface, fontFamily: theme.typography.fontFamily.displayBold }]}>
+            {displayName}
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant, fontFamily: theme.typography.fontFamily.bodyRegular }]}>
+            Enter your security PIN or authenticate to unlock
+          </Text>
         </View>
 
         <Animated.View style={[styles.pinDotsContainer, shakeStyle]}>
@@ -150,9 +151,9 @@ export const AuthLockScreen: React.FC = () => {
               key={i}
               style={[
                 styles.dot,
-                { 
+                {
                   borderColor: theme.colors.outlineVariant,
-                  backgroundColor: i < pinEntry.length ? theme.colors.primary : "transparent" 
+                  backgroundColor: i < pinEntry.length ? theme.colors.primary : "transparent"
                 }
               ]}
             />
@@ -161,9 +162,9 @@ export const AuthLockScreen: React.FC = () => {
 
         <View style={styles.feedbackContainer}>
           {error ? (
-              <Animated.Text entering={FadeIn} style={[styles.errorText, { color: theme.colors.error, fontFamily: theme.typography.fontFamily.headlineSemi }]}>
-                  {error}
-              </Animated.Text>
+            <Animated.Text entering={FadeIn} style={[styles.errorText, { color: theme.colors.error, fontFamily: theme.typography.fontFamily.headlineSemi }]}>
+              {error}
+            </Animated.Text>
           ) : (
             <View style={{ height: 20 }} />
           )}
@@ -171,13 +172,13 @@ export const AuthLockScreen: React.FC = () => {
 
         <View style={styles.pad}>
           <View style={styles.row}>
-            {[ "1", "2", "3" ].map(renderKey)}
+            {["1", "2", "3"].map(renderKey)}
           </View>
           <View style={styles.row}>
-            {[ "4", "5", "6" ].map(renderKey)}
+            {["4", "5", "6"].map(renderKey)}
           </View>
           <View style={styles.row}>
-            {[ "7", "8", "9" ].map(renderKey)}
+            {["7", "8", "9"].map(renderKey)}
           </View>
           <View style={styles.row}>
             <Pressable
@@ -216,8 +217,8 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   header: {
-      alignItems: "center",
-      marginTop: 20,
+    alignItems: "center",
+    marginTop: 20,
   },
   iconContainer: {
     width: 80,
@@ -255,8 +256,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   errorText: {
-      fontSize: 13,
-      textAlign: "center",
+    fontSize: 13,
+    textAlign: "center",
   },
   pad: {
     width: "100%",

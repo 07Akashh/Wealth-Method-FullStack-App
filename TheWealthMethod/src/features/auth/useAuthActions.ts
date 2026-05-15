@@ -1,8 +1,10 @@
-import { useState } from "react";
 import { toast } from "@backpackapp-io/react-native-toast";
+import { useState } from "react";
 
 import { authService, LoginInput, SignupInput } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
+import { useUserStore } from "../../store/userStore";
+import { resetAppData } from "../../utils/resetAppData";
 
 export const useAuthActions = () => {
   const loginStore = useAuthStore((state) => state.login);
@@ -16,7 +18,21 @@ export const useAuthActions = () => {
     setLoading(true);
     try {
       const result = await authService.login(input);
-      loginStore(result);
+      await resetAppData();
+      loginStore(result, input.pass ?? null);
+      useUserStore.setState((state) => ({
+        ...state,
+        firstName: result.profile.firstname || "",
+        lastName: result.profile.lastname || "",
+        name: result.profile.name || [result.profile.firstname, result.profile.lastname].filter(Boolean).join(" ") || state.name,
+        email: result.profile.email || state.email,
+        phone: result.profile.phone || state.phone,
+        avatar: result.profile.img ?? state.avatar,
+        currency: result.profile.preferredCurrency || state.currency,
+        biometricsEnabled: result.profile.biometricEnabled ?? state.biometricsEnabled,
+        privacyEnabled: result.profile.privacyMode ?? state.privacyEnabled,
+      }));
+      await useUserStore.getState().fetchProfile();
       return result;
     } catch (error: any) {
       toast.error(error.message || "Login failed");
@@ -121,6 +137,7 @@ export const useAuthActions = () => {
     } catch (error) {
       console.error("Failed to logout from backend", error);
     } finally {
+      await resetAppData();
       logoutStore();
       setLoading(false);
     }

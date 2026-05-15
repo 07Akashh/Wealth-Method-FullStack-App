@@ -72,7 +72,7 @@ export const PersonalInfoScreen: React.FC = () => {
   const { theme, isDark } = useAppTheme();
   const { logout } = useAuthActions();
   const navigation = useNavigation<NativeStackNavigationProp<PortalStackParamList>>();
-  const { name, email, phone, avatar, updateProfile, fetchProfile } = useUserStore();
+  const { firstName, lastName, name, email, phone, avatar, updateProfile, fetchProfile } = useUserStore();
   const [biometricAuth, setBiometricAuth] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,11 +84,22 @@ export const PersonalInfoScreen: React.FC = () => {
   }, [fetchProfile]);
 
   const [form, setForm] = useState({
-    name,
+    firstName,
+    lastName,
     email,
     phone,
     avatar,
   });
+
+  React.useEffect(() => {
+    setForm({
+      firstName,
+      lastName,
+      email,
+      phone,
+      avatar,
+    });
+  }, [firstName, lastName, email, phone, avatar]);
 
   const pickImage = async () => {
     if (!isEditing) return;
@@ -105,13 +116,15 @@ export const PersonalInfoScreen: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!form.name || !form.email) {
-      Alert.alert("Input Required", "Legal Name and Email are required");
+    if (!form.firstName || !form.lastName || !form.email) {
+      Alert.alert("Input Required", "First name, last name, and email are required");
       return;
     }
     updateProfile(form);
     setIsEditing(false);
   };
+
+  const displayName = [form.firstName, form.lastName].filter(Boolean).join(" ") || name;
 
   const styles = useThemedStyles((t) => ({
     container: {
@@ -331,7 +344,7 @@ export const PersonalInfoScreen: React.FC = () => {
               </View>
             )}
           </View>
-          <Text style={styles.name}>{isEditing ? "Profile Customization" : form.name}</Text>
+          <Text style={styles.name}>{isEditing ? "Profile Customization" : displayName}</Text>
           <View style={styles.tierBadgeRow}>
             <View style={styles.tierBadge}>
               <Text style={styles.tierText}>PRIVATE WEALTH</Text>
@@ -361,14 +374,28 @@ export const PersonalInfoScreen: React.FC = () => {
         </Animated.View>
 
         {/* Info Sections */}
-        <InfoSection 
-          label="Legal Name" 
-          value={form.name} 
-          verified 
-          isEditing={isEditing}
-          onChangeText={(t: string) => setForm({ ...form, name: t })}
-          placeholder="Enter your full legal name"
-        />
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <InfoSection 
+              label="First Name" 
+              value={form.firstName} 
+              verified 
+              isEditing={isEditing}
+              onChangeText={(t: string) => setForm({ ...form, firstName: t })}
+              placeholder="Enter first name"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <InfoSection 
+              label="Last Name" 
+              value={form.lastName} 
+              verified 
+              isEditing={isEditing}
+              onChangeText={(t: string) => setForm({ ...form, lastName: t })}
+              placeholder="Enter last name"
+            />
+          </View>
+        </View>
         
         <View style={{ marginBottom: 24 }}>
           <Text style={{ fontSize: 10, fontFamily: theme.typography.fontFamily.headlineBold, color: theme.colors.onSurfaceDim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Designations</Text>
