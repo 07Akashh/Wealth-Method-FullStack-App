@@ -1,0 +1,47 @@
+{
+  "user_create": {
+    "msg": "Account created successfully. Credentials sent to email."
+  },
+  "user_update": {
+    "msg": "Profile updated successfully."
+  },
+  "login_success": {
+    "msg": "Login successful."
+  },
+  "logout_success": {
+    "msg": "Logged out successfully from this device."
+  },
+  "logout_others": {
+    "msg": "Logged out from all other devices successfully."
+  },
+  "session_revoked": {
+    "msg": "Device session revoked successfully."
+  },
+  "otp_verified": {
+    "msg": "OTP verified successfully."
+  },
+  "otp_sent": {
+    "msg": "Reset OTP sent to your email."
+  },
+  "pass_reset": {
+    "msg": "Password reset successful."
+  },
+  "transaction_create": {
+    "msg": "Transaction recorded successfully."
+  },
+  "transaction_update": {
+    "msg": "Transaction updated successfully."
+  },
+  "transaction_delete": {
+    "msg": "Transaction deleted successfully."
+  },
+  "goal_create": {
+    "msg": "Goal created successfully."
+  },
+  "goal_update": {
+    "msg": "Goal updated successfully."
+  },
+  "goal_delete": {
+    "msg": "Goal deleted successfully."
+  }
+}
