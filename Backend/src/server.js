@@ -7,41 +7,32 @@ require("dotenv").config();
 
 const config = require("./config");
 const redisClient = require("./redisClient/init");
+const express = require("express");
+const responseTime = require("response-time");
+const http = require("http");
+
+const app = express();
+app.use(responseTime());
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "10mb" }));
+
+// Set app root
+app.locals.rootDir = __dirname;
+global.approot = __dirname;
+
+// Express middlewares (cors, helmet, etc.)
+config.expressConfig(app, config.cfg);
+
+// Attach all routes
+require("./routes")(app);
+
+module.exports = app;
 
 global.appStarted = false;
 
-config.dbConfig(config.cfg, (error) => {
-  if (error) {
-    console.error("DB connection failed. Exiting.", error);
-    process.exit(1);
-  }
+const shouldListen = require.main === module && !process.env.VERCEL;
 
-  // Initialize Redis
-  redisClient.init().then(() => {
-    if (global.appStarted) {
-      console.log("Application already running. Skipping re-initialization.");
-      return;
-    }
-
-  const express = require("express");
-  const responseTime = require("response-time");
-  const http = require("http");
-
-  const app = express();
-  app.use(responseTime());
-  app.use(express.urlencoded({ limit: "10mb", extended: true }));
-  app.use(express.json({ limit: "10mb" }));
-
-  // Set app root
-  app.locals.rootDir = __dirname;
-  global.approot = __dirname;
-
-  // Express middlewares (cors, helmet, etc.)
-  config.expressConfig(app, config.cfg);
-
-  // Attach all routes
-  require("./routes")(app);
-
+const startServer = () => {
   const server = http.createServer(app);
 
   server
@@ -58,5 +49,35 @@ config.dbConfig(config.cfg, (error) => {
         console.error("Server error:", err);
       }
     });
-  });
+};
+
+config.dbConfig(config.cfg, (error) => {
+  if (error) {
+    console.error("DB connection failed.", error);
+    if (shouldListen) {
+      process.exit(1);
+    }
+    return;
+  }
+
+  // Initialize Redis
+  redisClient
+    .init()
+    .then(() => {
+      if (global.appStarted) {
+        console.log("Application already running. Skipping re-initialization.");
+        return;
+      }
+
+      if (shouldListen) {
+        startServer();
+      }
+    })
+    .catch((err) => {
+      console.error("Redis connection failed.", err);
+      if (shouldListen) {
+        process.exit(1);
+      }
+    });
 });
+
