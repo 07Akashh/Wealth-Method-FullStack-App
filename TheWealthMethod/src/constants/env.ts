@@ -5,8 +5,8 @@ export enum Environment {
   PREPROD = "PREPROD",
 }
 
-// Force LOCAL for current development session
-export const ENV: Environment = Environment.LOCAL;
+// Use the dev backend for build/test environments
+export const ENV: Environment = Environment.DEV;
 
 const CONFIG = {
   [Environment.LOCAL]: {
@@ -15,17 +15,17 @@ const CONFIG = {
     BASIC_AUTH_PASS: "wealth_secret_pass",
   },
   [Environment.DEV]: {
-    API_URL: "https://dev.wealthmethod.com/api/v1",
+    API_URL: "https://wealth-method-backend.vercel.app/api/v1",
     BASIC_AUTH_USER: "wealthapi",
     BASIC_AUTH_PASS: "wealth_secret_pass",
   },
   [Environment.PROD]: {
-    API_URL: "https://api.wealthmethod.com/api/v1",
+    API_URL: "https://wealth-method-backend.vercel.app/api/v1",
     BASIC_AUTH_USER: "wealthapi",
     BASIC_AUTH_PASS: "wealth_secret_pass",
   },
   [Environment.PREPROD]: {
-    API_URL: "https://preprod.wealthmethod.com/api/v1",
+    API_URL: "https://wealth-method-backend.vercel.app/api/v1",
     BASIC_AUTH_USER: "wealthapi",
     BASIC_AUTH_PASS: "wealth_secret_pass",
   },
