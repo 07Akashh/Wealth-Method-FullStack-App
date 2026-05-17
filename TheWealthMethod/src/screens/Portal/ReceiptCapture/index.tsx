@@ -1,13 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Images, X } from 'lucide-react-native';
-import { useAppTheme } from '../../../theme/ThemeProvider';
-import { useReceiptCaptureStore } from '../../../store/receiptCaptureStore';
+import React, { useRef, useState } from 'react';
+import { Alert, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
 import { PortalStackParamList } from '../../../navigation/types';
-import * as Haptics from 'expo-haptics';
+import { useReceiptCaptureStore } from '../../../store/receiptCaptureStore';
+import { useAppTheme } from '../../../theme/ThemeProvider';
 
 type Props = NativeStackScreenProps<PortalStackParamList, 'ReceiptCapture'>;
 
@@ -16,6 +16,7 @@ export const ReceiptCaptureScreen: React.FC<Props> = ({ navigation }) => {
     const { close, setReceiptImage, transactionType } = useReceiptCaptureStore();
     const [permission, requestPermission] = useCameraPermissions();
     const [isCameraActive, setIsCameraActive] = useState(false);
+    const [isCameraReady, setIsCameraReady] = useState(false);
     const cameraRef = useRef<CameraView>(null);
 
     // Request camera permission
@@ -24,6 +25,7 @@ export const ReceiptCaptureScreen: React.FC<Props> = ({ navigation }) => {
             const { granted } = await requestPermission();
             if (granted) {
                 setIsCameraActive(true);
+                setIsCameraReady(false);
             } else {
                 Alert.alert(
                     'Camera Permission',
@@ -33,28 +35,47 @@ export const ReceiptCaptureScreen: React.FC<Props> = ({ navigation }) => {
             }
         } else {
             setIsCameraActive(true);
+            setIsCameraReady(false);
         }
     };
 
     const handleTakePhoto = async () => {
-        if (cameraRef.current) {
-            try {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                const photo = await cameraRef.current.takePictureAsync();
-                if (photo?.uri) {
-                    setReceiptImage(photo.uri);
-                    navigation.replace('ReceiptPreview');
-                }
-            } catch (error) {
-                console.error('Error taking photo:', error);
+        if (!cameraRef.current || !isCameraReady) {
+            Alert.alert('Camera not ready', 'Please wait a moment for the camera to initialize.');
+            return;
+        }
+
+        try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+            if (photo?.uri) {
+                setReceiptImage(photo.uri);
+                navigation.replace('ReceiptPreview');
+            } else {
                 Alert.alert('Error', 'Failed to capture photo');
             }
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            Alert.alert('Error', 'Failed to capture photo');
         }
     };
 
     const handlePickFromGallery = async () => {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const permissionResult = await ImagePicker.getMediaLibraryPermissionsAsync();
+            if (!permissionResult.granted) {
+                const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!granted) {
+                    Alert.alert(
+                        'Gallery Permission',
+                        'We need photo access to pick receipts from your gallery.',
+                        [{ text: 'OK' }]
+                    );
+                    return;
+                }
+            }
+
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
@@ -177,11 +198,12 @@ export const ReceiptCaptureScreen: React.FC<Props> = ({ navigation }) => {
     if (isCameraActive) {
         return (
             <View style={dynamicStyles.cameraContainer}>
-                <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" />
+                <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" onCameraReady={() => setIsCameraReady(true)} />
                 <SafeAreaView style={dynamicStyles.controlsContainer}>
                     <Pressable
-                        style={[dynamicStyles.button, dynamicStyles.primaryButton, { width: '100%' }]}
+                        style={[dynamicStyles.button, dynamicStyles.primaryButton, { width: '100%', opacity: isCameraReady ? 1 : 0.6 }]}
                         onPress={handleTakePhoto}
+                        disabled={!isCameraReady}
                     >
                         <Camera size={20} color="#FFFFFF" />
                         <Text style={dynamicStyles.buttonText}>CAPTURE RECEIPT</Text>

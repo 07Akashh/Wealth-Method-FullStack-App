@@ -1,43 +1,42 @@
-import React, { useState, useLayoutEffect } from "react";
-import {
-  Text,
-  View,
-  Pressable,
-  TextStyle,
-  ViewStyle,
-  Image,
-  ImageStyle,
-  Dimensions,
-  Switch,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
-import {
-  ShieldCheck,
-  ChevronRight,
-  Mail,
-  Phone,
-  Calendar,
-  Download,
-  LogOut,
-  CheckCircle2,
-  Plus,
-  Camera,
-  User,
-  Edit2,
-} from "lucide-react-native";
-import * as ImagePicker from "expo-image-picker";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { ScreenWrapper } from "../../components/layout/ScreenWrapper";
-import { useAppTheme, useThemedStyles } from "../../theme/ThemeProvider";
-import { useAuthActions } from "../../features/auth/useAuthActions";
-import { useUserStore } from "../../store/userStore";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as ImagePicker from "expo-image-picker";
+import {
+    Calendar,
+    Camera,
+    CheckCircle2,
+    ChevronRight,
+    Download,
+    LogOut,
+    Mail,
+    Phone,
+    Plus,
+    ShieldCheck,
+    User
+} from "lucide-react-native";
+import React, { useLayoutEffect, useState } from "react";
+import {
+    Alert,
+    Dimensions,
+    Image,
+    ImageStyle,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    Switch,
+    Text,
+    TextInput,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle,
+} from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { ScreenWrapper } from "../../components/layout/ScreenWrapper";
+import { useAuthActions } from "../../features/auth/useAuthActions";
 import { PortalStackParamList } from "../../navigation/types";
+import { useUserStore } from "../../store/userStore";
+import { useAppTheme, useThemedStyles } from "../../theme/ThemeProvider";
 
 const { width } = Dimensions.get("window");
 
@@ -103,6 +102,15 @@ export const PersonalInfoScreen: React.FC = () => {
 
   const pickImage = async () => {
     if (!isEditing) return;
+    const permissionResult = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) {
+        Alert.alert("Gallery Permission", "Please allow photo access to pick a profile image.");
+        return;
+      }
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,

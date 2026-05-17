@@ -31,8 +31,8 @@ import {
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   ActivityIndicator,
+  Alert,
   Animated,
   Image,
   Platform,
@@ -255,6 +255,15 @@ export const AddTransactionBottomSheet = () => {
 
   const pickImage = async () => {
     console.log('[Processing] Opening image library...');
+    const permissionResult = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Gallery Permission', 'Please allow photo access to pick a receipt from your gallery.');
+        return;
+      }
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
