@@ -4,11 +4,16 @@ const config = require("../config").cfg;
 const appUtils = require("../utils/appUtils");
 
 let client;
+let connectPromise;
 
-const init = () => {
+const createClient = () => {
   const { redis: r } = config;
   const redisUrl = `redis://${r.user}:${r.pass}@${r.server}:${r.port}`;
-  
+
+  if (client) {
+    return client;
+  }
+
   client = redis.createClient({
     url: r.pass ? redisUrl : `redis://${r.server}:${r.port}`,
   });
@@ -21,34 +26,58 @@ const init = () => {
     console.log("✅  Redis connected.");
   });
 
-  return client.connect();
+  return client;
+};
+
+const init = () => {
+  if (connectPromise) {
+    return connectPromise;
+  }
+
+  const redisClient = createClient();
+  connectPromise = redisClient.connect().catch((err) => {
+    connectPromise = undefined;
+    throw err;
+  });
+
+  return connectPromise;
+};
+
+const ensureClient = () => {
+  if (client?.isOpen) {
+    return Promise.resolve(client);
+  }
+
+  return init().then(() => client);
 };
 
 const setValue = (key, value, expiry = config.TOKEN_EXPIRATION_SEC) => {
-  return client.set(key, value, {
-    EX: expiry,
-  });
+  return ensureClient().then((redisInstance) =>
+    redisInstance.set(key, value, {
+      EX: expiry,
+    })
+  );
 };
 
 const getValue = (key) => {
-  return client.get(key);
+  return ensureClient().then((redisInstance) => redisInstance.get(key));
 };
 
 const deleteValue = (key) => {
-  return client.del(key);
+  return ensureClient().then((redisInstance) => redisInstance.del(key));
 };
 
 // SADD/SMEMBERS for multiple sessions per user
 const addToSet = (key, value) => {
-  return client.sAdd(key, value);
+  return ensureClient().then((redisInstance) => redisInstance.sAdd(key, value));
 };
 
 const removeFromSet = (key, value) => {
-  return client.sRem(key, value);
+  return ensureClient().then((redisInstance) => redisInstance.sRem(key, value));
 };
 
 const getSetMembers = (key) => {
-  return client.sMembers(key);
+  return ensureClient().then((redisInstance) => redisInstance.sMembers(key));
 };
 
 module.exports = {

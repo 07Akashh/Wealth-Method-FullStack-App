@@ -6,6 +6,10 @@ const methodOverride = require("method-override");
 const rateLimit = require("express-rate-limit");
 
 module.exports = function (app, cfg) {
+  if (process.env.VERCEL) {
+    app.set("trust proxy", 1);
+  }
+
   // Security headers
   app.use(helmet());
 
