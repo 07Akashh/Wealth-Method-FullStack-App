@@ -6,8 +6,7 @@ import {
   Theme,
 } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import React, { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -15,6 +14,7 @@ import * as Notifications from "expo-notifications";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AddGoalBottomSheet } from "../components/modals/AddGoalBottomSheet";
 import { AddTransactionBottomSheet } from "../components/modals/AddTransactionBottomSheet";
+import { useAppLock } from "../hooks/useAppLock";
 import QueryProvider from "../lib/TanstackQuery/QueryProvider";
 import { RootNavigator } from "../navigation/RootNavigator";
 import { AuthLockScreen } from "../screens/Auth/AuthLockScreen";
@@ -25,33 +25,12 @@ import { ThemeProvider, useAppTheme } from "../theme/ThemeProvider";
 const NavigationWrapper: React.FC = () => {
   const { theme, isDark } = useAppTheme();
   const { isAppLocked, biometricsEnabled, pinEnabled, setAppLocked, hasHydrated } = useUserStore();
-  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (lockTimerRef.current) {
-        clearTimeout(lockTimerRef.current);
-        lockTimerRef.current = null;
-      }
-
-      if (nextAppState.match(/inactive|background/) && (biometricsEnabled || pinEnabled) && !isAppLocked) {
-        lockTimerRef.current = setTimeout(() => {
-          if (AppState.currentState !== "active") {
-            setAppLocked(true);
-          }
-        }, 900);
-      }
-    };
-
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-
-    return () => {
-      if (lockTimerRef.current) {
-        clearTimeout(lockTimerRef.current);
-      }
-      subscription.remove();
-    };
-  }, [biometricsEnabled, isAppLocked, pinEnabled, setAppLocked]);
+  useAppLock({
+    enabled: biometricsEnabled || pinEnabled,
+    isLocked: isAppLocked,
+    setLocked: setAppLocked,
+  });
 
   const { isAuthenticated, hasHydrated: hasAuthHydrated } = useAuthStore();
 
