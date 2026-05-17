@@ -1,56 +1,52 @@
-import React, { useMemo, useEffect } from "react";
-import Animated, { 
-  useAnimatedProps, 
-  useSharedValue, 
-  withTiming, 
-} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Pressable,
-  TextStyle,
-  ViewStyle,
-  Dimensions,
-  Platform,
-} from "react-native";
-import { 
-  Target as TargetIcon,
+  Asterisk,
+  Edit3,
   Flame,
-  Quote,
   Home,
   Plane,
-  Asterisk,
-  TrendingUp,
+  Quote,
   Sparkles,
-  ChevronRight,
-  Edit3,
+  Target as TargetIcon,
   Trash2,
-  MoreVertical,
-  Plus,
+  TrendingUp
 } from "lucide-react-native";
+import React, { useEffect, useMemo } from "react";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle
+} from "react-native";
+import Animated, {
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
-import { LinearGradient } from "expo-linear-gradient";
 
-import { ScreenWrapper } from "../../../components/layout/ScreenWrapper";
-import { useAppTheme } from "../../../theme/ThemeProvider";
-import { useGoals, useDashboardStats } from "../../../lib/TanstackQuery/QueryHooks";
-import { useUserStore } from "../../../store/userStore";
 import { ActivityIndicator } from "react-native";
 import { EmptyState } from "../../../components/common/EmptyState";
 import { ErrorState } from "../../../components/common/ErrorState";
+import { ScreenWrapper } from "../../../components/layout/ScreenWrapper";
+import { useDashboardStats, useGoals } from "../../../lib/TanstackQuery/QueryHooks";
+import { useUserStore } from "../../../store/userStore";
+import { useAppTheme } from "../../../theme/ThemeProvider";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Replaced hardcoded objectives with SQLite data
 const targetObjectives: any[] = [];
 
-import { useBottomSheetStore } from "../../../store/bottomSheetStore";
-import { useNavigation } from "@react-navigation/native";
-import { useDeleteGoal } from "../../../lib/TanstackQuery/QueryHooks";
 import { toast } from "@backpackapp-io/react-native-toast";
+import { useNavigation } from "@react-navigation/native";
 import { Alert } from "react-native";
+import { useDeleteGoal } from "../../../lib/TanstackQuery/QueryHooks";
+import { useBottomSheetStore } from "../../../store/bottomSheetStore";
 
 export const AssetVaultScreen: React.FC = () => {
   const { theme, isDark } = useAppTheme();
@@ -496,6 +492,7 @@ export const AssetVaultScreen: React.FC = () => {
           return goals.map((obj: any, idx: number) => {
             const allocatedAmount = Math.min(obj.targetAmount, Math.max(0, remainingBalance));
             remainingBalance -= allocatedAmount;
+            const goalKey = obj.id || obj._id || obj.syncId || `${obj.title || 'goal'}-${idx}`;
             
             const percent = Math.round((allocatedAmount / obj.targetAmount) * 100);
             const palette = [
@@ -507,7 +504,7 @@ export const AssetVaultScreen: React.FC = () => {
 
             return (
               <Pressable 
-                  key={obj.id} 
+                  key={goalKey}
                   style={dynamicStyles.objectiveCard}
                   onPress={() => navigation.navigate('GoalDetail', { goal: obj, allocatedAmount })}
                   onLongPress={() => openBottomSheet('add-goal', obj)}

@@ -157,11 +157,38 @@ export const WealthOverviewScreen: React.FC<Props> = ({ navigation }) => {
   }, [insights, theme, currencySymbol, convertAmount]);
 
   const isNoSpendToday = useMemo(() => {
-    if (!insights?.trends) return false;
-    const todayLabel = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][new Date().getDay()];
-    const todayTrend = insights.trends.find((t: { day: string; }) => t.day === todayLabel);
-    return !todayTrend || todayTrend.amount === 0;
+    const trends = insights?.trends || [];
+    if (!trends.length) return false;
+
+    const now = new Date();
+    const todayLabel = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][now.getDay()];
+    const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    const todayTrend = trends.find((t: any) => {
+      const trendDay = String(t?.day || "").trim().toUpperCase().slice(0, 3);
+      const trendDate = String(t?.date || "").trim().slice(0, 10);
+      return trendDate === todayDate || trendDay === todayLabel;
+    });
+
+    if (!todayTrend) return false;
+
+    const amount = Number(todayTrend?.amount || 0);
+    return Number.isFinite(amount) && amount <= 0;
   }, [insights]);
+
+  const noSpendCardStyle = useMemo(() => ({
+    backgroundColor: theme.colors.success + '0D',
+    borderColor: theme.colors.success + '40',
+    borderWidth: 1,
+    ...(Platform.OS === 'android'
+      ? {
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowRadius: 0,
+          shadowOffset: { width: 0, height: 0 },
+        }
+      : {}),
+  }), [theme]);
 
   const dynamicStyles = useMemo(() => ({
     welcomeBack: {
@@ -516,7 +543,7 @@ export const WealthOverviewScreen: React.FC<Props> = ({ navigation }) => {
       </LinearGradient>
 
       {isNoSpendToday && (
-        <View style={[dynamicStyles.sectionCard, { backgroundColor: theme.colors.success + '0D', borderColor: theme.colors.success + '40', borderWidth: 1 }]}>
+        <View style={[dynamicStyles.sectionCard, noSpendCardStyle]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: theme.colors.success + '20', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={24} color={theme.colors.success} fill={theme.colors.success + '40'} />
