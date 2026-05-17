@@ -1,50 +1,57 @@
+import { Toasts } from "@backpackapp-io/react-native-toast";
 import {
+  DarkTheme,
+  DefaultTheme,
   NavigationContainer,
   Theme,
-  DefaultTheme,
-  DarkTheme,
 } from "@react-navigation/native";
-import React from "react";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { Toasts } from "@backpackapp-io/react-native-toast";
 
-import { RootNavigator } from "../navigation/RootNavigator";
-import { ThemeProvider, useAppTheme } from "../theme/ThemeProvider";
-import QueryProvider from "../lib/TanstackQuery/QueryProvider";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { AddTransactionBottomSheet } from "../components/modals/AddTransactionBottomSheet";
-import { AddGoalBottomSheet } from "../components/modals/AddGoalBottomSheet";
-import { AuthLockScreen } from "../screens/Auth/AuthLockScreen";
-import { useUserStore } from "../store/userStore";
-import { useAuthStore } from "../store/authStore";
 import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AddGoalBottomSheet } from "../components/modals/AddGoalBottomSheet";
+import { AddTransactionBottomSheet } from "../components/modals/AddTransactionBottomSheet";
+import QueryProvider from "../lib/TanstackQuery/QueryProvider";
+import { RootNavigator } from "../navigation/RootNavigator";
+import { AuthLockScreen } from "../screens/Auth/AuthLockScreen";
+import { useAuthStore } from "../store/authStore";
+import { useUserStore } from "../store/userStore";
+import { ThemeProvider, useAppTheme } from "../theme/ThemeProvider";
 
 const NavigationWrapper: React.FC = () => {
   const { theme, isDark } = useAppTheme();
   const { isAppLocked, biometricsEnabled, pinEnabled, setAppLocked, hasHydrated } = useUserStore();
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      // Lock the app if it's inactive or background and biometrics are enabled
-      if (
-        nextAppState.match(/inactive|background/) &&
-        (biometricsEnabled || pinEnabled) &&
-        !isAppLocked
-      ) {
-        setAppLocked(true);
+      if (lockTimerRef.current) {
+        clearTimeout(lockTimerRef.current);
+        lockTimerRef.current = null;
+      }
+
+      if (nextAppState.match(/inactive|background/) && (biometricsEnabled || pinEnabled) && !isAppLocked) {
+        lockTimerRef.current = setTimeout(() => {
+          if (AppState.currentState !== "active") {
+            setAppLocked(true);
+          }
+        }, 900);
       }
     };
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);
 
     return () => {
+      if (lockTimerRef.current) {
+        clearTimeout(lockTimerRef.current);
+      }
       subscription.remove();
     };
-  }, [biometricsEnabled, isAppLocked, setAppLocked]);
+  }, [biometricsEnabled, isAppLocked, pinEnabled, setAppLocked]);
 
   const { isAuthenticated, hasHydrated: hasAuthHydrated } = useAuthStore();
 
