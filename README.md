@@ -1,4 +1,4 @@
-# The Wealth Method
+# The Wealth Method - [Download APK](https://drive.google.com/drive/folders/1TOSDVGZ9pm7c26hQgLt3dHhKr01XdaRS?usp=sharing)
 
 The Wealth Method is a wealth-management app split into two parts:
 
